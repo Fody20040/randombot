@@ -1,9 +1,14 @@
 import asyncio
-from aiogram import Bot, Dispatcher, types, executor
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters import Command
+from aiogram.types import Message
+from aiogram import F
 
-TOKEN = '8337898993:AAGlATM17_cUZxY_vLxYMJE2dO2pFdx_ngg'
+import os
+
+TOKEN = os.getenv('8337898993:AAGlATM17_cUZxY_vLxYMJE2dO2pFdx_ngg')
 bot = Bot(token=TOKEN)
-dp = Dispatcher(bot)
+dp = Dispatcher()
 
 waiting = []
 pairs = {}
@@ -53,8 +58,8 @@ async def try_match():
         active_timers[user2] = task
 
 
-@dp.message_handler(commands=['start'])
-async def start_handler(message: types.Message):
+@dp.message(Command("start"))
+async def start_handler(message: Message):
     user_id = message.from_user.id
     if user_id in pairs:
         await message.answer("Ты уже в чате. Пиши собеседнику или останови чат командой /stop")
@@ -68,8 +73,8 @@ async def start_handler(message: types.Message):
     await try_match()
 
 
-@dp.message_handler(commands=['stop'])
-async def stop_handler(message: types.Message):
+@dp.message(Command("stop"))
+async def stop_handler(message: Message):
     user_id = message.from_user.id
     if user_id in pairs:
         partner_id = pairs.pop(user_id)
@@ -94,8 +99,8 @@ async def stop_handler(message: types.Message):
             await message.answer("Ты не в чате и не в очереди.")
 
 
-@dp.message_handler()
-async def relay_message(message: types.Message):
+@dp.message(F.text)
+async def relay_message(message: Message):
     user_id = message.from_user.id
     if user_id in pairs:
         partner_id = pairs[user_id]
@@ -110,6 +115,10 @@ async def relay_message(message: types.Message):
         await message.answer("Ты не в чате. Начни новый /start")
 
 
+async def main():
+    await dp.start_polling(bot)
+
 if __name__ == '__main__':
     print("Бот запущен. Нажми Ctrl+C для остановки.")
-    executor.start_polling(dp)
+    import asyncio
+    asyncio.run(main())
